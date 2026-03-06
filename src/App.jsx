@@ -375,7 +375,7 @@ I set the coin beside the old Naxos tetradrachm on my table. Silenus lifts his c
 
 function splitNameForDisplay(name) {
   const parts = name.split(". ");
-  if (paif (parts.length > 1) {
+  if (parts.length > 1) {
     return { line1: `${parts[0]}.`, line2: parts.slice(1).join(". ") };
   }
   return { line1: name };
