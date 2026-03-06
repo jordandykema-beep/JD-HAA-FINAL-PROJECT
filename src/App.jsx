@@ -1,56 +1,6 @@
 import { useMemo, useState } from "react";
 
-type Citation = {
-  label: string;
-  url?: string;
-};
-
-type MuseumObject = {
-  slug: string;
-  name: string;
-  date: string;
-  place: string;
-  theme: string;
-  excerpt: string;
-  fullEntry: string;
-  citations?: Citation[];
-  imageSrc?: string;
-  imageAlt?: string;
-  imageCaption?: string;
-};
-
-type MuseumSection = {
-  id: string;
-  label: string;
-  title: string;
-  subtitle?: string;
-  kicker?: string;
-  body?: string[];
-  objects?: MuseumObject[];
-  timeline?: string[];
-};
-
-function splitParagraphs(text: string): string[] {
-  return text
-    .split(/\n\s*\n/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean);
-}
-
-function runTests() {
-  console.assert(splitParagraphs("One\n\nTwo").length === 2, "splits paragraphs");
-  console.assert(splitParagraphs("One\n\n  \nTwo\n\nThree").length === 3, "ignores empty breaks");
-  console.assert(splitParagraphs("").length === 0, "handles empty string");
-  console.assert(splitParagraphs("Single")[0] === "Single", "keeps single paragraph");
-  console.assert(
-    splitParagraphs("A\n\nB\n\nC").join("|") === "A|B|C",
-    "preserves paragraph order"
-  );
-}
-
-runTests();
-
-const sections: MuseumSection[] = [
+const sections = [
   {
     id: "intro",
     label: "Introduction",
@@ -423,15 +373,13 @@ I set the coin beside the old Naxos tetradrachm on my table. Silenus lifts his c
   },
 ];
 
-function splitNameForDisplay(name: string): { line1: string; line2?: string } {
-  const parts = name.split(". ");
-  if (parts.length > 1) {
+rts.length > 1) {
     return { line1: `${parts[0]}.`, line2: parts.slice(1).join(". ") };
   }
   return { line1: name };
 }
 
-function PlaceholderCoin({ label }: { label: string }) {
+function PlaceholderCoin({ label }) {
   return (
     <div className="flex h-full w-full items-center justify-center border border-stone-700 bg-stone-950 text-center text-xs uppercase tracking-[0.14em] text-stone-500">
       {label}
@@ -439,7 +387,7 @@ function PlaceholderCoin({ label }: { label: string }) {
   );
 }
 
-function CoinImage({ object, card = false }: { object: MuseumObject; card?: boolean }) {
+function CoinImage({ object, card = false }) {
   const wrapperClass = card
     ? "mb-5 flex aspect-[5/3] items-center justify-center overflow-hidden border border-stone-700 bg-stone-950"
     : "flex aspect-[5/4] items-center justify-center overflow-hidden border border-stone-700 bg-stone-950";
@@ -459,7 +407,7 @@ function CoinImage({ object, card = false }: { object: MuseumObject; card?: bool
   );
 }
 
-function EntryCitations({ citations }: { citations: Citation[] }) {
+function EntryCitations({ citations }) {
   return (
     <div className="mt-8 border-t border-stone-800 pt-5">
       <h4 className="text-xs uppercase tracking-[0.16em] text-stone-500">Sources</h4>
@@ -487,7 +435,7 @@ function EntryCitations({ citations }: { citations: Citation[] }) {
 }
 
 export default function App() {
-  const [selectedObject, setSelectedObject] = useState<MuseumObject | null>(null);
+  const [selectedObject, setSelectedObject] = useState(null);
 
   const allObjects = useMemo(
     () => sections.flatMap((section) => section.objects || []),
@@ -627,7 +575,7 @@ export default function App() {
                     <div
                       key={item}
                       className={
-                        index !== section.timeline!.length - 1
+                        index !== section.timeline.length - 1
                           ? "border-b border-stone-800 p-5 text-stone-300"
                           : "p-5 text-stone-300"
                       }
