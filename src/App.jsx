@@ -1054,4 +1054,3 @@ export default function App() {
     </div>
   );
 }
-ok, this is what the code looks like now. please directly fix the problem in the code you gave me. do not have me keep doing it myself. why is this so hard please just do it. The current issue is that the blurb for the generations are gone again. please do not remove them, i already told you i need those. Also do not just keep forgetting about the sources and then remove those too. please just give me actual fixed code
