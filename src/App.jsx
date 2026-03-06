@@ -1,5 +1,464 @@
 import { useMemo, useState } from "react";
 
+function splitParagraphs(text) {
+  return text
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+}
+
+function runTests() {
+  console.assert(splitParagraphs("One\n\nTwo").length === 2, "splits paragraphs");
+  console.assert(splitParagraphs("One\n\n  \nTwo\n\nThree").length === 3, "ignores empty breaks");
+  console.assert(splitParagraphs("").length === 0, "handles empty string");
+  console.assert(splitParagraphs("Single")[0] === "Single", "keeps single paragraph");
+}
+
+runTests();
+
+const siteCss = `
+  :root {
+    color-scheme: dark;
+    --bg: #0a0a0a;
+    --panel: #111111;
+    --panel-2: #0f0f0f;
+    --panel-3: #101010;
+    --border: #2a2a2a;
+    --text: #f5f5f4;
+    --muted: #a8a29e;
+    --muted-2: #78716c;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Georgia, "Times New Roman", serif;
+  }
+
+  a { color: inherit; }
+
+  .museum-shell {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .museum-header {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .museum-wrap {
+    width: min(1200px, calc(100% - 48px));
+    margin: 0 auto;
+  }
+
+  .museum-hero {
+    padding: 64px 0;
+  }
+
+  .eyebrow {
+    margin: 0 0 24px 0;
+    color: var(--muted-2);
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .title {
+    margin: 0;
+    font-size: clamp(42px, 7vw, 76px);
+    line-height: 1.05;
+    font-weight: 600;
+  }
+
+  .subtitle {
+    margin: 24px 0 0 0;
+    max-width: 850px;
+    font-size: 22px;
+    line-height: 1.7;
+    color: #d6d3d1;
+  }
+
+  .daterange {
+    margin: 16px 0 0 0;
+    color: var(--muted-2);
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .museum-main {
+    width: min(1200px, calc(100% - 48px));
+    margin: 0 auto;
+    padding: 40px 0 64px 0;
+    display: grid;
+    grid-template-columns: 250px minmax(0, 1fr);
+    gap: 40px;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    padding: 20px;
+  }
+
+  .sidebar-title {
+    margin: 0 0 16px 0;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted-2);
+  }
+
+  .sidebar nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .sidebar-link {
+    display: block;
+    padding: 8px 0 8px 8px;
+    text-decoration: none;
+    color: var(--muted);
+    border-left: 1px solid transparent;
+  }
+
+  .sidebar-link:hover {
+    color: var(--text);
+    border-left-color: var(--muted);
+  }
+
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
+  .section {
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    padding: 32px;
+  }
+
+  .section-label {
+    margin: 0;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted-2);
+  }
+
+  .section-title {
+    margin: 12px 0 0 0;
+    font-size: clamp(32px, 4vw, 46px);
+    line-height: 1.15;
+    font-weight: 600;
+  }
+
+  .section-subtitle {
+    margin: 12px 0 0 0;
+    font-size: 22px;
+    line-height: 1.7;
+    color: #d6d3d1;
+  }
+
+  .section-kicker {
+    margin: 16px 0 0 0;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted-2);
+  }
+
+  .section-body {
+    margin-top: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .section-body p {
+    margin: 0;
+    color: #d6d3d1;
+    line-height: 1.9;
+    font-size: 17px;
+  }
+
+  .section-body .lead {
+    font-size: 32px;
+    color: var(--text);
+  }
+
+  .object-grid {
+    margin-top: 36px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+  }
+
+  .object-card {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    padding: 24px;
+  }
+
+  .object-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+    margin-bottom: 18px;
+  }
+
+  .object-kicker {
+    margin: 0;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted-2);
+  }
+
+  .object-title {
+    margin: 10px 0 0 0;
+    font-size: 32px;
+    line-height: 1.15;
+    font-weight: 600;
+  }
+
+  .object-meta {
+    margin: 12px 0 0 0;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  .coin-figure {
+    margin: 0 0 18px 0;
+    width: 100%;
+    border: 1px solid var(--border);
+    background: #000;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .coin-figure.card {
+    aspect-ratio: 5 / 3;
+  }
+
+  .coin-figure.modal {
+    aspect-ratio: 5 / 4;
+  }
+
+  .coin-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+  }
+
+  .coin-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: var(--muted-2);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+
+  .coin-caption {
+    margin: 0 0 18px 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--muted-2);
+  }
+
+  .small-label {
+    margin: 0;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted-2);
+  }
+
+  .theme-text {
+    margin: 8px 0 0 0;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #d6d3d1;
+  }
+
+  .excerpt {
+    margin: 22px 0 0 0;
+    padding-left: 16px;
+    border-left: 1px solid #57534e;
+    font-size: 26px;
+    line-height: 1.6;
+    color: #f5f5f4;
+  }
+
+  .read-button,
+  .close-button {
+    margin-top: 26px;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid #57534e;
+    padding: 12px 16px;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .read-button:hover,
+  .close-button:hover {
+    background: #1c1917;
+  }
+
+  .timeline {
+    margin-top: 36px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+  }
+
+  .timeline-item {
+    padding: 18px 20px;
+    color: #d6d3d1;
+    line-height: 1.8;
+  }
+
+  .timeline-item + .timeline-item {
+    border-top: 1px solid var(--border);
+  }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.82);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 50;
+  }
+
+  .modal {
+    width: min(1080px, 100%);
+    max-height: 92vh;
+    overflow: hidden;
+    border: 1px solid #44403c;
+    background: #0c0c0c;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    border-bottom: 1px solid var(--border);
+    padding: 20px 24px;
+  }
+
+  .modal-title {
+    margin: 10px 0 0 0;
+    font-size: 38px;
+    line-height: 1.15;
+    font-weight: 600;
+  }
+
+  .modal-meta {
+    margin: 10px 0 0 0;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  .modal-body {
+    display: grid;
+    grid-template-columns: 360px minmax(0, 1fr);
+    max-height: calc(92vh - 110px);
+  }
+
+  .modal-side {
+    padding: 24px;
+    border-right: 1px solid var(--border);
+    background: var(--panel-3);
+    overflow-y: auto;
+  }
+
+  .modal-text {
+    padding: 24px 28px;
+    overflow-y: auto;
+  }
+
+  .modal-text p {
+    margin: 0 0 24px 0;
+    color: #d6d3d1;
+    line-height: 1.9;
+    font-size: 17px;
+  }
+
+  .sources {
+    margin-top: 28px;
+    border-top: 1px solid var(--border);
+    padding-top: 18px;
+  }
+
+  .sources-title {
+    margin: 0;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted-2);
+  }
+
+  .source-item {
+    margin-top: 8px;
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--muted);
+  }
+
+  .source-link {
+    color: #d6d3d1;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  @media (max-width: 960px) {
+    .museum-main {
+      grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+      position: static;
+    }
+
+    .object-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .modal-body {
+      grid-template-columns: 1fr;
+    }
+
+    .modal-side {
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+  }
+`;
+
 const sections = [
   {
     id: "intro",
@@ -12,8 +471,8 @@ const sections = [
       "A Note from the Compiler",
       "My name is Jordan Dykema, and I have gathered here the surviving journals of a Macedonian merchant family whose papers passed, over generations, from cedar chest to cedar chest. The earliest entries come from the old harbor town of Therma, on the Thermaic Gulf. Later entries belong to descendants writing from Thessalonike, the city founded by Cassander in the late fourth century BCE. The papers are not complete. There are silences, gaps, and broken lines of inheritance. Still, enough remains to show a family habit: when one of them encountered a coin that seemed to say something lasting about power, place, or ambition, they wrote it down.",
       "What follows is not the whole history of the ancient Mediterranean, only the portion that passed through one family's hands.",
-      "Compiled at Cambridge, Massachusetts, spring 2026.",
-    ],
+      "Compiled at Cambridge, Massachusetts, spring 2026."
+    ]
   },
   {
     id: "gen1",
@@ -23,7 +482,7 @@ const sections = [
     body: [
       "I am born at Therma, a harbor at the head of the gulf, where the water is never still for long and where the smell of fish, tar, wet rope, and grain hangs in the air from dawn to nightfall. My father trades olive oil, grain, timber, and whatever else can survive a journey by mule or hull. By the time I am steady on my feet, I am already following him to storehouses and quays. Therma is not yet a grand city. It is a place of movement, of loading and unloading, of waiting for a wind to change. Perhaps that is why I never mind leaving it.",
       "I am quick with numbers and slower with everything else. My father discovers this early and spares me the heaviest lifting. I keep tallies, weigh silver, count sacks, and check measures. That is where my interest in coins begins. A jar of oil stays where it is sent. A coin does not. It moves farther than any cargo and survives more owners than any ship. It carries the mark of a city into places that city itself will never see.",
-      "So I begin writing them down.",
+      "So I begin writing them down."
     ],
     objects: [
       {
@@ -50,13 +509,13 @@ I buy two amphoras, a sack of almonds, and keep one tetradrachm aside for myself
         citations: [
           {
             label: "The Metropolitan Museum of Art, Heilbrunn Timeline of Art History, resources on ancient Sicily and Greek coinage.",
-            url: "https://www.metmuseum.org/toah/",
+            url: "https://www.metmuseum.org/toah/"
           },
           {
             label: "The British Museum, collection records for Greek coinage from Sicily.",
-            url: "https://www.britishmuseum.org/collection",
-          },
-        ],
+            url: "https://www.britishmuseum.org/collection"
+          }
+        ]
       },
       {
         slug: "athens",
@@ -81,13 +540,13 @@ I spend six weeks in Athens and leave richer than I arrived, though not enough t
         citations: [
           {
             label: "The British Museum, collection records for Athenian owl tetradrachms.",
-            url: "https://www.britishmuseum.org/collection",
+            url: "https://www.britishmuseum.org/collection"
           },
           {
             label: "The Metropolitan Museum of Art, essays and collection resources on ancient Greek trade and coinage.",
-            url: "https://www.metmuseum.org/toah/",
-          },
-        ],
+            url: "https://www.metmuseum.org/toah/"
+          }
+        ]
       },
       {
         slug: "akragas",
@@ -112,15 +571,15 @@ I stand in a city that imagines itself the eagle and not the hare. Still, the ma
         citations: [
           {
             label: "ToposText, entry on Akragas.",
-            url: "https://topostext.org/place/373136PAkr",
+            url: "https://topostext.org/place/373136PAkr"
           },
           {
             label: "The British Museum, Greek coin collection resources.",
-            url: "https://www.britishmuseum.org/collection",
-          },
-        ],
-      },
-    ],
+            url: "https://www.britishmuseum.org/collection"
+          }
+        ]
+      }
+    ]
   },
   {
     id: "gen2",
@@ -129,7 +588,7 @@ I stand in a city that imagines itself the eagle and not the hare. Still, the ma
     subtitle: "Active on the northern and eastern routes",
     body: [
       "My father could sit in a market half a day before speaking. I cannot. Perhaps that is a flaw. Still, the world is moving faster now than it did in his time. Macedon is no longer a rough northern kingdom others laugh at. Philip has seen to that. Roads are being improved, armies are always somewhere ahead of you, and trade follows power whether it admires it or not.",
-      "I learn to travel in a world of courts, camps, and royal ambition. Philip reshapes the north. Alexander stretches the routes eastward beyond anything my father knew. The men who inherit that world learn quickly that power can be copied in silver even when it cannot be held intact on the ground.",
+      "I learn to travel in a world of courts, camps, and royal ambition. Philip reshapes the north. Alexander stretches the routes eastward beyond anything my father knew. The men who inherit that world learn quickly that power can be copied in silver even when it cannot be held intact on the ground."
     ],
     objects: [
       {
@@ -152,13 +611,13 @@ What strikes me most is the restraint. Philip does not place his own face on the
         citations: [
           {
             label: "The Metropolitan Museum of Art, collection resources on Philip II coinage.",
-            url: "https://www.metmuseum.org/toah/",
+            url: "https://www.metmuseum.org/toah/"
           },
           {
             label: "Harvard Art Museums, collection records.",
-            url: "https://harvardartmuseums.org/collections",
-          },
-        ],
+            url: "https://harvardartmuseums.org/collections"
+          }
+        ]
       },
       {
         slug: "alexander-babylon",
@@ -181,13 +640,13 @@ That is what impresses me most. Not the beauty of a single specimen, though it i
         citations: [
           {
             label: "Encyclopaedia Britannica, entry on Babylon.",
-            url: "https://www.britannica.com/place/Babylon-ancient-city-Mesopotamia-Asia",
+            url: "https://www.britannica.com/place/Babylon-ancient-city-Mesopotamia-Asia"
           },
           {
             label: "The British Museum, collection records for Alexander coinage.",
-            url: "https://www.britishmuseum.org/collection",
-          },
-        ],
+            url: "https://www.britishmuseum.org/collection"
+          }
+        ]
       },
       {
         slug: "ptolemy",
@@ -209,13 +668,13 @@ It is not simply memorial coinage. It is interpretation. Ptolemy is not yet sayi
         citations: [
           {
             label: "Encyclopaedia Britannica, history of Alexandria.",
-            url: "https://www.britannica.com/place/Alexandria-Egypt/History",
+            url: "https://www.britannica.com/place/Alexandria-Egypt/History"
           },
           {
             label: "Harvard Art Museums, collection records.",
-            url: "https://harvardartmuseums.org/collections",
-          },
-        ],
+            url: "https://harvardartmuseums.org/collections"
+          }
+        ]
       },
       {
         slug: "sardis",
@@ -237,15 +696,15 @@ A coin does not care whether the body behind its claim still breathes. If the ty
         citations: [
           {
             label: "Sardis Expedition, history and chronology resources.",
-            url: "https://sardisexpedition.org/",
+            url: "https://sardisexpedition.org/"
           },
           {
             label: "The British Museum, collection resources on Hellenistic coinage.",
-            url: "https://www.britishmuseum.org/collection",
-          },
-        ],
-      },
-    ],
+            url: "https://www.britishmuseum.org/collection"
+          }
+        ]
+      }
+    ]
   },
   {
     id: "gen3",
@@ -254,7 +713,7 @@ A coin does not care whether the body behind its claim still breathes. If the ty
     subtitle: "Active on the Syrian and Thracian routes",
     body: [
       "I grow up in a world my grandfather would scarcely recognize. The old Greek city-states still stand, but the great stage now belongs to kingdoms. Egypt belongs to the Ptolemies. Syria and the east belong to Seleucus. Thrace and nearby lands answer to Lysimachos. Routes remain, but rulers change over them like weather over a harbor.",
-      "My work is not to admire these arrangements but to move through them. Yet coins make admiration and suspicion difficult to avoid. A ruler's face, title, and symbols pass into every hand. Even a merchant who keeps his opinions to himself cannot fail to notice how carefully power chooses to present itself.",
+      "My work is not to admire these arrangements but to move through them. Yet coins make admiration and suspicion difficult to avoid. A ruler's face, title, and symbols pass into every hand. Even a merchant who keeps his opinions to himself cannot fail to notice how carefully power chooses to present itself."
     ],
     objects: [
       {
@@ -276,13 +735,13 @@ I do not despise the coin for this. A merchant has little right to despise effec
         citations: [
           {
             label: "Harvard Art Museums, collection records.",
-            url: "https://harvardartmuseums.org/collections",
+            url: "https://harvardartmuseums.org/collections"
           },
           {
             label: "The British Museum, Hellenistic coin collection resources.",
-            url: "https://www.britishmuseum.org/collection",
-          },
-        ],
+            url: "https://www.britishmuseum.org/collection"
+          }
+        ]
       },
       {
         slug: "lysimachos",
@@ -303,15 +762,15 @@ What astonishes me is the date of it all. Alexander has been dead for decades, y
         citations: [
           {
             label: "The British Museum, collection records for Lysimachos coinage.",
-            url: "https://www.britishmuseum.org/collection",
+            url: "https://www.britishmuseum.org/collection"
           },
           {
             label: "Harvard Art Museums, collection records.",
-            url: "https://harvardartmuseums.org/collections",
-          },
-        ],
-      },
-    ],
+            url: "https://harvardartmuseums.org/collections"
+          }
+        ]
+      }
+    ]
   },
   {
     id: "gen4",
@@ -320,7 +779,7 @@ What astonishes me is the date of it all. Alexander has been dead for decades, y
     subtitle: "c. 43 to 42 BCE",
     body: [
       "After generations of silence, I reopen the journals in a Roman world. By my time the world described by the earlier entries is gone, or nearly so. The old Greek cities remain but under larger powers. The successor kings have given way, one after another, to Rome. Roads are better in some places, taxes worse in others, and everywhere official business arrives with greater confidence than before.",
-      "I keep writing because the chest should not end in silence. Rome now arranges the world in the manner Macedon once did, though with a colder habit of endurance. And when Rome begins to fracture around Caesar's death, the fracture, too, appears in silver.",
+      "I keep writing because the chest should not end in silence. Rome now arranges the world in the manner Macedon once did, though with a colder habit of endurance. And when Rome begins to fracture around Caesar's death, the fracture, too, appears in silver."
     ],
     objects: [
       {
@@ -345,15 +804,15 @@ I set the coin beside the old Naxos tetradrachm on my table. Silenus lifts his c
         citations: [
           {
             label: "Livius, Philippi (42 BCE).",
-            url: "https://www.livius.org/articles/battle/philippi-42-bce/",
+            url: "https://www.livius.org/articles/battle/philippi-42-bce/"
           },
           {
             label: "The British Museum, collection records for the Eid Mar denarius.",
-            url: "https://www.britishmuseum.org/collection",
-          },
-        ],
-      },
-    ],
+            url: "https://www.britishmuseum.org/collection"
+          }
+        ]
+      }
+    ]
   },
   {
     id: "timeline",
@@ -368,9 +827,9 @@ I set the coin beside the old Naxos tetradrachm on my table. Silenus lifts his c
       "c. 325 BCE: Alexander's imperial silver circulates in Babylon.",
       "c. 318 to 317 BCE: The successors preserve Alexander while remaking his image.",
       "c. 300 to 285 BCE: Seleucus and Lysimachos assert kingship through inherited visual forms.",
-      "42 BCE: Brutus' Eid Mar denarius marks the Roman crisis in the bluntest silver of the exhibition.",
-    ],
-  },
+      "42 BCE: Brutus' Eid Mar denarius marks the Roman crisis in the bluntest silver of the exhibition."
+    ]
+  }
 ];
 
 function splitNameForDisplay(name) {
@@ -383,24 +842,20 @@ function splitNameForDisplay(name) {
 
 function PlaceholderCoin({ label }) {
   return (
-    <div className="flex h-full w-full items-center justify-center border border-stone-700 bg-stone-950 text-center text-xs uppercase tracking-[0.14em] text-stone-500">
-      {label}
-    </div>
+    <div className="coin-placeholder">{label}</div>
   );
 }
 
 function CoinImage({ object, card = false }) {
-  const wrapperClass = card
-    ? "mb-5 flex aspect-[5/3] items-center justify-center overflow-hidden border border-stone-700 bg-stone-950"
-    : "flex aspect-[5/4] items-center justify-center overflow-hidden border border-stone-700 bg-stone-950";
+  const figureClass = card ? "coin-figure card" : "coin-figure modal";
 
   return (
-    <figure className={wrapperClass}>
+    <figure className={figureClass}>
       {object.imageSrc ? (
         <img
           src={object.imageSrc}
           alt={object.imageAlt || object.name}
-          className="h-full w-full object-contain"
+          className="coin-img"
         />
       ) : (
         <PlaceholderCoin label="Coin image" />
@@ -411,18 +866,18 @@ function CoinImage({ object, card = false }) {
 
 function EntryCitations({ citations }) {
   return (
-    <div className="mt-8 border-t border-stone-800 pt-5">
-      <h4 className="text-xs uppercase tracking-[0.16em] text-stone-500">Sources</h4>
-      <div className="mt-3 space-y-2">
+    <div className="sources">
+      <h4 className="sources-title">Sources</h4>
+      <div>
         {citations.map((citation, index) => (
-          <div key={citation.label} className="text-sm leading-7 text-stone-400">
-            <span className="mr-2 text-stone-600">{index + 1}.</span>
+          <div key={citation.label} className="source-item">
+            <span>{index + 1}. </span>
             {citation.url ? (
               <a
                 href={citation.url}
                 target="_blank"
                 rel="noreferrer"
-                className="text-stone-300 underline underline-offset-4 hover:text-white"
+                className="source-link"
               >
                 {citation.label}
               </a>
@@ -447,76 +902,54 @@ export default function App() {
   const activeObject = selectedObject || allObjects[0] || null;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-stone-100">
-      <header className="border-b border-stone-800 bg-[#0a0a0a]">
-        <div className="mx-auto max-w-7xl px-6 py-16 lg:px-10">
-          <div className="max-w-4xl">
-            <p className="mb-6 text-xs uppercase tracking-[0.18em] text-stone-500">
-              Digital exhibition
-            </p>
-            <h1 className="max-w-4xl font-serif text-5xl leading-tight text-stone-50 md:text-7xl">
-              Dispatches from the Ancient Road
-            </h1>
-            <p className="mt-6 max-w-3xl text-lg leading-8 text-stone-300">
-              Being the collected records of the House of Nikodemos, merchants first of Therma and later of Thessalonike, concerning the coins they handled, the roads they traveled, and the kingdoms they watched rise and fall.
-            </p>
-            <p className="mt-4 text-sm uppercase tracking-[0.16em] text-stone-500">
-              461 BCE to 42 BCE
-            </p>
-          </div>
+    <div className="museum-shell">
+      <style>{siteCss}</style>
+
+      <header className="museum-header">
+        <div className="museum-wrap museum-hero">
+          <p className="eyebrow">Digital exhibition</p>
+          <h1 className="title">Dispatches from the Ancient Road</h1>
+          <p className="subtitle">
+            Being the collected records of the House of Nikodemos, merchants first of Therma and later of Thessalonike, concerning the coins they handled, the roads they traveled, and the kingdoms they watched rise and fall.
+          </p>
+          <p className="daterange">461 BCE to 42 BCE</p>
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 py-10 lg:grid-cols-[260px_minmax(0,1fr)] lg:px-10">
-        <aside className="lg:sticky lg:top-6 lg:h-fit">
-          <div className="border border-stone-800 bg-[#0f0f0f] p-5">
-            <h2 className="text-xs uppercase tracking-[0.16em] text-stone-500">Contents</h2>
-            <nav className="mt-4 space-y-1">
-              {sections.map((section) => (
-                <a
-                  key={section.id}
-                  href={`#${section.id}`}
-                  className="block border-l border-transparent px-0 py-2 text-sm text-stone-400 transition hover:border-stone-500 hover:pl-2 hover:text-stone-100"
-                >
-                  {section.label}
-                </a>
-              ))}
-            </nav>
-          </div>
+      <main className="museum-main">
+        <aside className="sidebar">
+          <h2 className="sidebar-title">Contents</h2>
+          <nav>
+            {sections.map((section) => (
+              <a
+                key={section.id}
+                href={`#${section.id}`}
+                className="sidebar-link"
+              >
+                {section.label}
+              </a>
+            ))}
+          </nav>
         </aside>
 
-        <div className="space-y-12">
+        <div className="content">
           {sections.map((section) => (
-            <section
-              key={section.id}
-              id={section.id}
-              className="border border-stone-800 bg-[#0f0f0f] p-8"
-            >
-              <div className="max-w-4xl">
-                <p className="text-xs uppercase tracking-[0.18em] text-stone-500">
-                  {section.label}
-                </p>
-                <h2 className="mt-3 font-serif text-3xl leading-tight text-stone-50 md:text-4xl">
-                  {section.title}
-                </h2>
+            <section key={section.id} id={section.id} className="section">
+              <div>
+                <p className="section-label">{section.label}</p>
+                <h2 className="section-title">{section.title}</h2>
                 {section.subtitle && (
-                  <p className="mt-3 text-lg leading-8 text-stone-300">{section.subtitle}</p>
+                  <p className="section-subtitle">{section.subtitle}</p>
                 )}
                 {section.kicker && (
-                  <p className="mt-4 text-sm uppercase tracking-[0.16em] text-stone-500">
-                    {section.kicker}
-                  </p>
+                  <p className="section-kicker">{section.kicker}</p>
                 )}
                 {section.body && (
-                  <div className="mt-8 space-y-5">
+                  <div className="section-body">
                     {section.body.map((paragraph, index) => (
                       <p
                         key={`${section.id}-body-${index}`}
-                        className={
-                          index === 0 && section.id === "intro"
-                            ? "font-serif text-2xl text-stone-100"
-                            : "leading-8 text-stone-300"
-                        }
+                        className={index === 0 && section.id === "intro" ? "lead" : ""}
                       >
                         {paragraph}
                       </p>
@@ -526,20 +959,18 @@ export default function App() {
               </div>
 
               {section.objects && (
-                <div className="mt-10 grid gap-6 lg:grid-cols-2">
+                <div className="object-grid">
                   {section.objects.map((object) => {
                     const displayName = splitNameForDisplay(object.name);
                     return (
-                      <article key={object.slug} className="border border-stone-800 bg-[#111111] p-6">
-                        <div className="mb-4 border-b border-stone-800 pb-4">
-                          <p className="text-xs uppercase tracking-[0.16em] text-stone-500">
-                            Journal entry
-                          </p>
-                          <h3 className="mt-2 font-serif text-2xl text-stone-50">
+                      <article key={object.slug} className="object-card">
+                        <div className="object-header">
+                          <p className="object-kicker">Journal entry</p>
+                          <h3 className="object-title">
                             {displayName.line1}
-                            {displayName.line2 && <span className="block">{displayName.line2}</span>}
+                            {displayName.line2 && <span style={{ display: "block" }}>{displayName.line2}</span>}
                           </h3>
-                          <p className="mt-2 text-sm leading-7 text-stone-400">
+                          <p className="object-meta">
                             {object.place} · {object.date}
                           </p>
                         </div>
@@ -547,21 +978,17 @@ export default function App() {
                         <CoinImage object={object} card />
 
                         {object.imageCaption && (
-                          <p className="mb-5 text-sm leading-6 text-stone-500">
-                            {object.imageCaption}
-                          </p>
+                          <p className="coin-caption">{object.imageCaption}</p>
                         )}
 
-                        <p className="text-xs uppercase tracking-[0.16em] text-stone-500">Theme</p>
-                        <p className="mt-2 text-sm leading-7 text-stone-300">{object.theme}</p>
+                        <p className="small-label">Theme</p>
+                        <p className="theme-text">{object.theme}</p>
 
-                        <blockquote className="mt-6 border-l border-stone-700 pl-4 font-serif text-lg leading-8 text-stone-200">
-                          “{object.excerpt}”
-                        </blockquote>
+                        <blockquote className="excerpt">“{object.excerpt}”</blockquote>
 
                         <button
                           onClick={() => setSelectedObject(object)}
-                          className="mt-8 border border-stone-700 px-4 py-3 text-sm uppercase tracking-[0.14em] text-stone-200 transition hover:bg-stone-900 hover:text-white"
+                          className="read-button"
                         >
                           Read full entry
                         </button>
@@ -572,16 +999,9 @@ export default function App() {
               )}
 
               {section.timeline && (
-                <div className="mt-10 border border-stone-800 bg-[#111111]">
-                  {section.timeline.map((item, index) => (
-                    <div
-                      key={item}
-                      className={
-                        index !== section.timeline.length - 1
-                          ? "border-b border-stone-800 p-5 text-stone-300"
-                          : "p-5 text-stone-300"
-                      }
-                    >
+                <div className="timeline">
+                  {section.timeline.map((item) => (
+                    <div key={item} className="timeline-item">
                       {item}
                     </div>
                   ))}
@@ -593,47 +1013,39 @@ export default function App() {
       </main>
 
       {activeObject && selectedObject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="max-h-[92vh] w-full max-w-5xl overflow-hidden border border-stone-700 bg-[#0c0c0c]">
-            <div className="flex items-start justify-between border-b border-stone-800 px-6 py-5 md:px-8">
+        <div className="modal-backdrop">
+          <div className="modal">
+            <div className="modal-header">
               <div>
-                <p className="text-xs uppercase tracking-[0.16em] text-stone-500">
-                  Full journal entry
-                </p>
-                <h3 className="mt-2 font-serif text-3xl text-stone-50">{activeObject.name}</h3>
-                <p className="mt-2 text-sm leading-7 text-stone-400">
+                <p className="object-kicker">Full journal entry</p>
+                <h3 className="modal-title">{activeObject.name}</h3>
+                <p className="modal-meta">
                   {activeObject.place} · {activeObject.date}
                 </p>
               </div>
               <button
                 onClick={() => setSelectedObject(null)}
-                className="border border-stone-700 px-4 py-2 text-sm uppercase tracking-[0.14em] text-stone-200 transition hover:bg-stone-900"
+                className="close-button"
               >
                 Close
               </button>
             </div>
 
-            <div className="grid max-h-[78vh] gap-0 md:grid-cols-[360px_minmax(0,1fr)]">
-              <div className="border-b border-stone-800 bg-[#101010] p-6 md:border-b-0 md:border-r">
+            <div className="modal-body">
+              <div className="modal-side">
                 <CoinImage object={activeObject} />
                 {activeObject.imageCaption && (
-                  <p className="mt-4 text-sm leading-6 text-stone-500">
-                    {activeObject.imageCaption}
-                  </p>
+                  <p className="coin-caption">{activeObject.imageCaption}</p>
                 )}
-                <p className="mt-5 text-xs uppercase tracking-[0.16em] text-stone-500">Theme</p>
-                <p className="mt-2 text-sm leading-7 text-stone-300">{activeObject.theme}</p>
+                <p className="small-label">Theme</p>
+                <p className="theme-text">{activeObject.theme}</p>
                 {activeObject.citations && <EntryCitations citations={activeObject.citations} />}
               </div>
 
-              <div className="max-h-[78vh] overflow-y-auto px-6 py-6 md:px-8">
-                <div className="max-w-3xl">
-                  {splitParagraphs(activeObject.fullEntry).map((paragraph, index) => (
-                    <p key={`${activeObject.slug}-${index}`} className="mb-6 leading-8 text-stone-300">
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
+              <div className="modal-text">
+                {splitParagraphs(activeObject.fullEntry).map((paragraph, index) => (
+                  <p key={`${activeObject.slug}-${index}`}>{paragraph}</p>
+                ))}
               </div>
             </div>
           </div>
@@ -642,3 +1054,4 @@ export default function App() {
     </div>
   );
 }
+ok, this is what the code looks like now. please directly fix the problem in the code you gave me. do not have me keep doing it myself. why is this so hard please just do it. The current issue is that the blurb for the generations are gone again. please do not remove them, i already told you i need those. Also do not just keep forgetting about the sources and then remove those too. please just give me actual fixed code
